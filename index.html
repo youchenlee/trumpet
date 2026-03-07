@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trumpet Fingering Trainer</title>
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/midi-parser-js@4.0.4/src/main.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep: #0f0f1a;
+    --bg-card: #1a1a2e;
+    --bg-surface: #22223a;
+    --gold: #C9A84C;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B7332;
+    --text: #E0D5C0;
+    --text-dim: #8a8578;
+    --accent: #e8c56d;
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(201,168,76,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-shadow: 0 2px 12px rgba(201,168,76,0.18);
+  }
+  .header p {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 12px;
+  }
+  .controls-bar label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .controls-bar select {
+    background: var(--bg-surface);
+    color: var(--text);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+  }
+  .controls-bar select:focus { border-color: var(--gold); }
+
+  .tempo-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .tempo-group input[type="range"] {
+    -webkit-appearance: none;
+    width: 120px;
+    height: 4px;
+    background: var(--bg-surface);
+    border-radius: 2px;
+    outline: none;
+  }
+  .tempo-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(201,168,76,0.4);
+  }
+  .bpm-display {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gold);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .sheet-music-wrapper {
+    background: var(--bg-card);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 12px;
+    padding: 20px 12px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #sheet-music { min-height: 160px; }
+  #sheet-music svg { display: block; }
+
+  .valve-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+    background: var(--bg-card);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 12px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+  }
+
+  .valve-casing {
+    fill: var(--bg-surface);
+    stroke: rgba(201,168,76,0.3);
+    stroke-width: 1.5;
+  }
+  .valve-piston-body {
+    fill: var(--gold);
+    stroke: var(--gold-dim);
+    stroke-width: 1;
+    transition: transform 0.1s ease-out, fill 0.1s ease-out;
+  }
+  .valve-piston-cap {
+    fill: var(--accent);
+    transition: transform 0.1s ease-out, fill 0.1s ease-out;
+  }
+  .valve-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    fill: var(--bg-deep);
+    font-weight: 700;
+    pointer-events: none;
+    transition: transform 0.1s ease-out;
+  }
+  .valve-group.pressed .valve-piston-body {
+    transform: translateY(18px);
+    fill: var(--gold-dim);
+  }
+  .valve-group.pressed .valve-piston-cap {
+    transform: translateY(18px);
+    fill: var(--gold-dim);
+  }
+  .valve-group.pressed .valve-label {
+    transform: translateY(18px);
+  }
+
+  .note-info { text-align: center; min-width: 140px; }
+  .note-info .current-note {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--gold-bright);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,215,0,0.25);
+  }
+  .note-info .fingering-text {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  .playback-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .btn {
+    background: var(--bg-surface);
+    color: var(--text);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover {
+    background: rgba(201,168,76,0.12);
+    border-color: var(--gold);
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--bg-deep);
+    border-color: var(--gold);
+    font-weight: 600;
+    padding: 12px 32px;
+    font-size: 0.95rem;
+  }
+  .btn-primary:hover {
+    background: var(--gold-bright);
+    box-shadow: 0 0 16px rgba(255,215,0,0.25);
+  }
+  .btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .btn-primary svg { width: 18px; height: 18px; }
+  .btn-import {
+    background: var(--bg-surface);
+    color: var(--text);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-import:hover {
+    background: rgba(201,168,76,0.12);
+    border-color: var(--gold);
+  }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.5rem; }
+    .controls-bar { flex-direction: column; align-items: stretch; }
+    .tempo-group { margin-left: 0; }
+    .valve-section { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Trumpet Fingering Trainer</h1>
+    <p>Digital sheet music with fingering display and playback</p>
+  </div>
+
+  <div class="controls-bar">
+    <div>
+      <label for="song-select">Song</label><br>
+      <select id="song-select"></select>
+    </div>
+    <div>
+      <label>&nbsp;</label><br>
+      <button class="btn btn-import" id="btn-import">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        Import MIDI
+      </button>
+      <input type="file" id="midi-file-input" accept=".mid,.midi" style="display:none">
+    </div>
+    <div class="tempo-group">
+      <label for="tempo-slider">Tempo</label>
+      <input type="range" id="tempo-slider" min="40" max="200" value="100">
+      <span class="bpm-display" id="bpm-display">100 BPM</span>
+    </div>
+  </div>
+
+  <div class="sheet-music-wrapper">
+    <div id="sheet-music"></div>
+  </div>
+
+  <div class="valve-section">
+    <div class="valve-container">
+      <svg id="valve-svg" viewBox="0 0 240 150" width="240" height="150">
+        <rect class="valve-casing" x="10" y="45" width="56" height="95" rx="10"/>
+        <rect class="valve-casing" x="92" y="45" width="56" height="95" rx="10"/>
+        <rect class="valve-casing" x="174" y="45" width="56" height="95" rx="10"/>
+        <g id="valve-1" class="valve-group">
+          <rect class="valve-piston-body" x="18" y="22" width="40" height="68" rx="8"/>
+          <circle class="valve-piston-cap" cx="38" cy="28" r="15"/>
+          <text class="valve-label" x="38" y="33" text-anchor="middle">1</text>
+        </g>
+        <g id="valve-2" class="valve-group">
+          <rect class="valve-piston-body" x="100" y="22" width="40" height="68" rx="8"/>
+          <circle class="valve-piston-cap" cx="120" cy="28" r="15"/>
+          <text class="valve-label" x="120" y="33" text-anchor="middle">2</text>
+        </g>
+        <g id="valve-3" class="valve-group">
+          <rect class="valve-piston-body" x="182" y="22" width="40" height="68" rx="8"/>
+          <circle class="valve-piston-cap" cx="202" cy="28" r="15"/>
+          <text class="valve-label" x="202" y="33" text-anchor="middle">3</text>
+        </g>
+      </svg>
+    </div>
+    <div class="note-info">
+      <div class="current-note" id="current-note">--</div>
+      <div class="fingering-text" id="fingering-text">Select a song and press Play</div>
+    </div>
+  </div>
+
+  <div class="playback-controls">
+    <button class="btn" id="btn-reset" title="Reset">
+      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="currentColor"/></svg>
+      Stop
+    </button>
+    <button class="btn btn-primary" id="btn-play" title="Play / Pause">
+      <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="icon-pause" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      <span id="play-label">Play</span>
+    </button>
+    <button class="btn" id="btn-next" title="Next note">
+      <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor"/></svg>
+      Next
+    </button>
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// ─── Fingering Data ─────────────────────────────────────────────────
+const FINGERINGS = {
+  'E/3':  [1,1,1],
+  'F/3':  [1,0,1],
+  'F#/3': [0,1,1], 'Gb/3': [0,1,1],
+  'G/3':  [1,1,0],
+  'G#/3': [1,0,0], 'Ab/3': [1,0,0],
+  'A/3':  [0,1,0],
+  'Bb/3': [0,0,0], 'A#/3': [0,0,0],
+  'B/3':  [1,1,1],
+  'C/4':  [1,0,1],
+  'C#/4': [0,1,1], 'Db/4': [0,1,1],
+  'D/4':  [1,1,0],
+  'D#/4': [1,0,0], 'Eb/4': [1,0,0],
+  'E/4':  [0,1,0],
+  'F/4':  [0,0,0],
+  'F#/4': [1,1,1], 'Gb/4': [1,1,1],
+  'G/4':  [1,0,1],
+  'G#/4': [0,1,1], 'Ab/4': [0,1,1],
+  'A/4':  [1,1,0],
+  'Bb/4': [1,0,0], 'A#/4': [1,0,0],
+  'B/4':  [0,1,0],
+  'C/5':  [0,0,0],
+  'C#/5': [1,1,1], 'Db/5': [1,1,1],
+  'D/5':  [1,0,1],
+  'D#/5': [0,1,1], 'Eb/5': [0,1,1],
+  'E/5':  [1,1,0],
+  'F/5':  [1,0,0],
+  'F#/5': [0,1,0], 'Gb/5': [0,1,0],
+  'G/5':  [0,0,0],
+  'G#/5': [0,1,1], 'Ab/5': [0,1,1],
+  'A/5':  [1,1,0],
+  'Bb/5': [1,0,0], 'A#/5': [1,0,0],
+  'B/5':  [0,0,0],
+  'C/6':  [0,0,0],
+};
+
+function getFingering(key) { return FINGERINGS[key] || null; }
+
+function fingeringDescription(f) {
+  if (!f) return 'N/A';
+  const pressed = [];
+  if (f[0]) pressed.push('1');
+  if (f[1]) pressed.push('2');
+  if (f[2]) pressed.push('3');
+  return pressed.length === 0 ? 'Open' : pressed.join(' - ');
+}
+
+// ─── Song Data ──────────────────────────────────────────────────────
+const SONGS = [
+  {
+    title: 'C Major Scale',
+    timeSignature: '4/4',
+    keySignature: 'C',
+    notes: [
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+    ]
+  },
+  {
+    title: 'Chromatic Scale',
+    timeSignature: '4/4',
+    keySignature: 'C',
+    notes: [
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['C#/4'], duration: 'q', accidentals: ['#'] },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['Eb/4'], duration: 'q', accidentals: ['b'] },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['F#/4'], duration: 'q', accidentals: ['#'] },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['G#/4'], duration: 'q', accidentals: ['#'] },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['Bb/4'], duration: 'q', accidentals: ['b'] },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
+    ]
+  },
+  {
+    title: 'Hot Cross Buns',
+    timeSignature: '4/4',
+    keySignature: 'C',
+    notes: [
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'h' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'h' },
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['D/4'], duration: '8' },
+      { keys: ['D/4'], duration: '8' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'h' },
+    ]
+  },
+  {
+    title: 'When The Saints Go Marching In',
+    timeSignature: '4/4',
+    keySignature: 'C',
+    notes: [
+      // Phrase 1: pickup measure + downbeat
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 2
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 3
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 4
+      { keys: ['E/4'], duration: 'h' },
+      { keys: ['C/4'], duration: 'h' },
+      // Measure 5
+      { keys: ['E/4'], duration: 'h' },
+      { keys: ['D/4'], duration: 'h' },
+      // Measure 6
+      { keys: ['C/4'], duration: 'w' },
+    ]
+  },
+  {
+    title: 'Ode to Joy',
+    timeSignature: '4/4',
+    keySignature: 'C',
+    notes: [
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'h' },
+      { keys: ['D/4'], duration: 'h' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'h' },
+      { keys: ['C/4'], duration: 'h' },
+    ]
+  },
+  {
+    title: 'Amazing Grace',
+    timeSignature: '3/4',
+    keySignature: 'C',
+    notes: [
+      // Measure 1: "A-"
+      { keys: ['F/4'], duration: 'h' },
+      { keys: ['A/4'], duration: 'q' },
+      // Measure 2: "-mazing grace"
+      { keys: ['A/4'], duration: 'h' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 3: "how sweet"
+      { keys: ['F/4'], duration: 'h' },
+      { keys: ['D/4'], duration: 'q' },
+      // Measure 4: "the"
+      { keys: ['C/4'], duration: 'h' },
+      { keys: ['C/4'], duration: 'q' },
+      // Measure 5: "sound that"
+      { keys: ['F/4'], duration: 'h' },
+      { keys: ['A/4'], duration: 'q' },
+      // Measure 6: "saved a"
+      { keys: ['A/4'], duration: 'h' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 7: "wretch"
+      { keys: ['C/5'], duration: 'h' },
+      { keys: ['C/5'], duration: 'q' },
+      // Measure 8: "like"
+      { keys: ['C/5'], duration: 'h' },
+      { keys: ['A/4'], duration: 'q' },
+      // Measure 9: "me___"
+      { keys: ['F/4'], duration: 'h' },
+      { keys: ['D/4'], duration: 'q' },
+      // Measure 10
+      { keys: ['C/4'], duration: 'h' },
+      { keys: ['C/4'], duration: 'q' },
+      // Measure 11
+      { keys: ['F/4'], duration: 'h' },
+      { keys: ['A/4'], duration: 'q' },
+      // Measure 12
+      { keys: ['A/4'], duration: 'h' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 13
+      { keys: ['F/4'], duration: 'h' },
+      { keys: ['F/4'], duration: 'q' },
+    ]
+  },
+  {
+    title: 'Happy Birthday',
+    timeSignature: '3/4',
+    keySignature: 'C',
+    notes: [
+      // Measure 1: "Hap-py birth-"
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+      // Measure 2: "-day to you"
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'h' },
+      // Measure 3: "Hap-py birth-"
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'q' },
+      // Measure 4: "-day to you"
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'h' },
+      // Measure 5: "Hap-py birth-"
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      // Measure 6: "-day dear ___"
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      // Measure 7: "Hap-py birth-"
+      { keys: ['Bb/4'], duration: '8', accidentals: ['b'] },
+      { keys: ['Bb/4'], duration: '8', accidentals: ['b'] },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      // Measure 8: "-day to you"
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'h' },
+    ]
+  },
+  {
+    title: 'Sousa Spectacular (Medley)',
+    timeSignature: '2/4',
+    keySignature: 'C',
+    notes: [
+      // ── Washington Post March ──
+      // Measure 1-2
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 3-4
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      // Measure 5-6
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 7-8
+      { keys: ['A/4'], duration: 'h' },
+      { keys: ['G/4'], duration: 'h' },
+      // Measure 9-10
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
+      // Measure 11-12
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+
+      // ── The Thunderer ──
+      // Measure 13-14
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 15-16
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      // Measure 17-18
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      // Measure 19-20
+      { keys: ['C/4'], duration: 'h' },
+      { keys: ['C/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      // Measure 21-22
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      // Measure 23-24
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['D/4'], duration: 'q' },
+      { keys: ['C/4'], duration: 'h' },
+
+      // ── Stars and Stripes Forever ──
+      // Measure 25-26
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 27-28
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'h' },
+      // Measure 29-30
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      // Measure 31-32
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['G/4'], duration: 'q' },
+      // Measure 33-34
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['B/4'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      // Measure 35-36: finale
+      { keys: ['G/4'], duration: 'q' },
+      { keys: ['E/4'], duration: 'q' },
+      { keys: ['C/5'], duration: 'h' },
+    ]
+  },
+];
+
+// ─── Duration Helpers ───────────────────────────────────────────────
+const DURATION_BEATS = { 'w': 4, 'h': 2, 'q': 1, '8': 0.5, '16': 0.25 };
+
+function durationBeats(dur) {
+  let d = dur.replace('r', '');
+  let dotted = false;
+  if (d.endsWith('d')) { dotted = true; d = d.slice(0, -1); }
+  let beats = DURATION_BEATS[d] || 1;
+  if (dotted) beats *= 1.5;
+  return beats;
+}
+
+function isRest(dur) { return dur.endsWith('r'); }
+
+// ─── VexFlow Rendering ─────────────────────────────────────────────
+const VF = Vex.Flow;
+
+function clearContainer(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+function renderSheet(song, highlightIndex) {
+  const container = document.getElementById('sheet-music');
+  clearContainer(container);
+
+  const notesPerMeasure = [];
+  let currentMeasure = [];
+  let beatsInMeasure = 0;
+  const timeParts = song.timeSignature.split('/');
+  const beatsPerMeasure = parseInt(timeParts[0]);
+
+  for (const n of song.notes) {
+    const b = durationBeats(n.duration);
+    if (beatsInMeasure + b > beatsPerMeasure + 0.001) {
+      notesPerMeasure.push(currentMeasure);
+      currentMeasure = [];
+      beatsInMeasure = 0;
+    }
+    currentMeasure.push(n);
+    beatsInMeasure += b;
+    if (Math.abs(beatsInMeasure - beatsPerMeasure) < 0.001) {
+      notesPerMeasure.push(currentMeasure);
+      currentMeasure = [];
+      beatsInMeasure = 0;
+    }
+  }
+  if (currentMeasure.length > 0) notesPerMeasure.push(currentMeasure);
+
+  const measuresPerLine = 4;
+  const clefWidth = 60;
+  const staveWidth = 200;
+  const lineHeight = 120;
+  const totalLines = Math.ceil(notesPerMeasure.length / measuresPerLine);
+  const totalWidth = clefWidth + measuresPerLine * staveWidth + 20;
+  const totalHeight = totalLines * lineHeight + 40;
+
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(totalWidth, totalHeight);
+  const context = renderer.getContext();
+  context.setFillStyle('#E0D5C0');
+  context.setStrokeStyle('#E0D5C0');
+
+  let globalNoteIdx = 0;
+  let highlightedBBox = null;
+
+  for (let m = 0; m < notesPerMeasure.length; m++) {
+    const lineIdx = Math.floor(m / measuresPerLine);
+    const colIdx = m % measuresPerLine;
+    const isFirstInLine = colIdx === 0;
+    const x = isFirstInLine ? 10 : 10 + clefWidth + colIdx * staveWidth;
+    const w = isFirstInLine ? staveWidth + clefWidth : staveWidth;
+    const y = lineIdx * lineHeight + 10;
+
+    const stave = new VF.Stave(x, y, w);
+    if (isFirstInLine) {
+      stave.addClef('treble');
+      if (m === 0) stave.addTimeSignature(song.timeSignature);
+    }
+    stave.setContext(context).draw();
+
+    const measureNotes = notesPerMeasure[m];
+    const vfNotes = [];
+
+    for (const nd of measureNotes) {
+      const dur = nd.duration.replace('d', '');
+      const isDotted = nd.duration.includes('d');
+      const sn = new VF.StaveNote({
+        keys: nd.keys.map(function(k) { return k.toLowerCase(); }),
+        duration: dur,
+      });
+
+      if (nd.accidentals) {
+        nd.accidentals.forEach(function(acc, i) {
+          sn.addModifier(new VF.Accidental(acc), i);
+        });
+      }
+
+      if (isDotted) {
+        VF.Dot.buildAndAttach([sn]);
+      }
+
+      if (globalNoteIdx === highlightIndex) {
+        sn.setStyle({ fillStyle: '#FFD700', strokeStyle: '#FFD700' });
+      } else {
+        sn.setStyle({ fillStyle: '#E0D5C0', strokeStyle: '#E0D5C0' });
+      }
+
+      vfNotes.push(sn);
+      globalNoteIdx++;
+    }
+
+    var beams = VF.Beam.generateBeams(vfNotes);
+    VF.Formatter.FormatAndDraw(context, stave, vfNotes);
+    beams.forEach(function(b) { b.setContext(context).draw(); });
+  }
+}
+
+// ─── Web Audio Synthesis ────────────────────────────────────────────
+const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function ensureAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtxClass();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+const NOTE_SEMITONES = {
+  'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+  'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+  'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11,
+};
+
+function pitchToFrequency(key) {
+  var parts = key.split('/');
+  var noteName = parts[0];
+  var octave = parseInt(parts[1]);
+  var semitone = NOTE_SEMITONES[noteName];
+  if (semitone === undefined) return 440;
+  // Bb trumpet: concert pitch is 2 semitones lower than written
+  var midiNote = (octave + 1) * 12 + semitone - 2;
+  return 440 * Math.pow(2, (midiNote - 69) / 12);
+}
+
+function playTone(frequency, durationSec) {
+  var ctx = ensureAudioCtx();
+  var now = ctx.currentTime;
+  var masterGain = ctx.createGain();
+  masterGain.gain.value = 0.22;
+  masterGain.connect(ctx.destination);
+
+  var harmonics = [1.0, 0.55, 0.3, 0.12, 0.06];
+  for (var i = 0; i < harmonics.length; i++) {
+    var amp = harmonics[i];
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = frequency * (i + 1);
+
+    var attackEnd = now + 0.04;
+    var decayEnd = attackEnd + 0.06;
+    var sustainLevel = amp * 0.55;
+    var releaseStart = now + durationSec - 0.05;
+    if (releaseStart < decayEnd) releaseStart = decayEnd;
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(amp, attackEnd);
+    gain.gain.linearRampToValueAtTime(sustainLevel, decayEnd);
+    gain.gain.setValueAtTime(sustainLevel, releaseStart);
+    gain.gain.linearRampToValueAtTime(0, now + durationSec);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + durationSec + 0.02);
+  }
+}
+
+// ─── UI State & Playback ────────────────────────────────────────────
+var currentSongIndex = 0;
+var currentNoteIndex = -1;
+var isPlaying = false;
+var bpm = 100;
+var playTimeoutId = null;
+
+function getCurrentSong() { return SONGS[currentSongIndex]; }
+
+function updateValveDisplay(noteKey) {
+  var f = noteKey ? getFingering(noteKey) : null;
+  for (var v = 1; v <= 3; v++) {
+    var el = document.getElementById('valve-' + v);
+    if (f && f[v - 1]) {
+      el.classList.add('pressed');
+    } else {
+      el.classList.remove('pressed');
+    }
+  }
+  var noteEl = document.getElementById('current-note');
+  var textEl = document.getElementById('fingering-text');
+  if (noteKey) {
+    noteEl.textContent = noteKey.replace('/', '');
+    textEl.textContent = 'Fingering: ' + (f ? fingeringDescription(f) : 'Unknown');
+  } else {
+    noteEl.textContent = '--';
+    textEl.textContent = 'Select a song and press Play';
+  }
+}
+
+function highlightAndShow(index) {
+  var song = getCurrentSong();
+  currentNoteIndex = index;
+  renderSheet(song, index);
+  if (index >= 0 && index < song.notes.length) {
+    var note = song.notes[index];
+    if (!isRest(note.duration)) {
+      updateValveDisplay(note.keys[0]);
+    } else {
+      updateValveDisplay(null);
+    }
+  } else {
+    updateValveDisplay(null);
+  }
+}
+
+function updatePlayButton() {
+  var iconPlay = document.getElementById('icon-play');
+  var iconPause = document.getElementById('icon-pause');
+  var label = document.getElementById('play-label');
+  if (isPlaying) {
+    iconPlay.style.display = 'none';
+    iconPause.style.display = 'block';
+    label.textContent = 'Pause';
+  } else {
+    iconPlay.style.display = 'block';
+    iconPause.style.display = 'none';
+    label.textContent = 'Play';
+  }
+}
+
+function resetPlayback() {
+  isPlaying = false;
+  if (playTimeoutId) { clearTimeout(playTimeoutId); playTimeoutId = null; }
+  currentNoteIndex = -1;
+  updatePlayButton();
+  highlightAndShow(-1);
+}
+
+function scheduleNextNote() {
+  if (!isPlaying) return;
+  var song = getCurrentSong();
+  if (currentNoteIndex >= song.notes.length) {
+    isPlaying = false;
+    updatePlayButton();
+    return;
+  }
+
+  var note = song.notes[currentNoteIndex];
+  var beats = durationBeats(note.duration);
+  var durationSec = beats * (60 / bpm);
+
+  highlightAndShow(currentNoteIndex);
+
+  if (!isRest(note.duration)) {
+    var freq = pitchToFrequency(note.keys[0]);
+    playTone(freq, durationSec * 0.9);
+  }
+
+  currentNoteIndex++;
+  playTimeoutId = setTimeout(scheduleNextNote, durationSec * 1000);
+}
+
+function togglePlay() {
+  ensureAudioCtx();
+  if (isPlaying) {
+    isPlaying = false;
+    if (playTimeoutId) { clearTimeout(playTimeoutId); playTimeoutId = null; }
+    updatePlayButton();
+  } else {
+    isPlaying = true;
+    updatePlayButton();
+    if (currentNoteIndex < 0 || currentNoteIndex >= getCurrentSong().notes.length) {
+      currentNoteIndex = 0;
+    }
+    scheduleNextNote();
+  }
+}
+
+function nextNote() {
+  var song = getCurrentSong();
+  var idx = currentNoteIndex < 0 ? 0 : currentNoteIndex + 1;
+  if (idx >= song.notes.length) return;
+  currentNoteIndex = idx;
+  highlightAndShow(currentNoteIndex);
+  ensureAudioCtx();
+  var note = song.notes[currentNoteIndex];
+  if (!isRest(note.duration)) {
+    playTone(pitchToFrequency(note.keys[0]), 0.4);
+  }
+}
+
+// ─── MIDI Import ────────────────────────────────────────────────────
+var MIDI_NOTE_NAMES = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+var ACCIDENTAL_FOR = { 'C#':'#', 'Eb':'b', 'F#':'#', 'Ab':'b', 'Bb':'b' };
+
+function midiNoteToKey(midiNote) {
+  // Transpose up 2 semitones for Bb trumpet (concert → written pitch)
+  var written = midiNote + 2;
+  var name = MIDI_NOTE_NAMES[written % 12];
+  var octave = Math.floor(written / 12) - 1;
+  return name + '/' + octave;
+}
+
+function ticksToDuration(ticks, ticksPerBeat) {
+  var beats = ticks / ticksPerBeat;
+  // Snap to nearest standard duration (including dotted)
+  if (beats >= 3.5) return 'w';       // 4 beats
+  if (beats >= 2.5) return 'hd';      // 3 beats (dotted half)
+  if (beats >= 1.75) return 'h';      // 2 beats
+  if (beats >= 1.25) return 'qd';     // 1.5 beats (dotted quarter)
+  if (beats >= 0.75) return 'q';      // 1 beat
+  if (beats >= 0.5) return '8d';      // 0.75 beats (dotted eighth)
+  if (beats >= 0.375) return '8';     // 0.5 beats
+  return '16';                         // 0.25 beats
+}
+
+function parseMidiToSong(midiData, fileName) {
+  var ticksPerBeat = midiData.timeDivision;
+  // Find the track with the most note events
+  var bestTrack = null;
+  var bestCount = 0;
+  for (var t = 0; t < midiData.track.length; t++) {
+    var count = 0;
+    var events = midiData.track[t].event;
+    for (var e = 0; e < events.length; e++) {
+      if (events[e].type === 9 && events[e].data && events[e].data[1] > 0) count++;
+    }
+    if (count > bestCount) { bestCount = count; bestTrack = t; }
+  }
+  if (bestTrack === null) return null;
+
+  // Extract note-on / note-off pairs
+  var events = midiData.track[bestTrack].event;
+  var activeNotes = {};
+  var notes = [];
+  var currentTick = 0;
+
+  for (var i = 0; i < events.length; i++) {
+    var ev = events[i];
+    currentTick += ev.deltaTime;
+
+    var isNoteOn = ev.type === 9 && ev.data && ev.data[1] > 0;
+    var isNoteOff = ev.type === 8 || (ev.type === 9 && ev.data && ev.data[1] === 0);
+
+    if (isNoteOn) {
+      var midiNote = ev.data[0];
+      activeNotes[midiNote] = currentTick;
+    } else if (isNoteOff && ev.data) {
+      var midiNote = ev.data[0];
+      if (activeNotes[midiNote] !== undefined) {
+        var startTick = activeNotes[midiNote];
+        var durationTicks = currentTick - startTick;
+        var key = midiNoteToKey(midiNote);
+        var dur = ticksToDuration(durationTicks, ticksPerBeat);
+        var noteName = MIDI_NOTE_NAMES[midiNote % 12];
+        var acc = ACCIDENTAL_FOR[noteName];
+        var noteObj = { keys: [key], duration: dur };
+        if (acc) noteObj.accidentals = [acc];
+        notes.push({ startTick: startTick, durationTicks: durationTicks, note: noteObj });
+        delete activeNotes[midiNote];
+      }
+    }
+  }
+
+  if (notes.length === 0) return null;
+
+  // Sort by start time
+  notes.sort(function(a, b) { return a.startTick - b.startTick; });
+
+  // Build notes with rests for gaps
+  var songNotes = [];
+  var prevEndTick = notes[0].startTick;
+  for (var j = 0; j < notes.length; j++) {
+    var gap = notes[j].startTick - prevEndTick;
+    if (gap > ticksPerBeat * 0.2) { // significant gap → insert rest
+      var restDur = ticksToDuration(gap, ticksPerBeat);
+      songNotes.push({ keys: ['B/4'], duration: restDur + 'r' });
+    }
+    songNotes.push(notes[j].note);
+    prevEndTick = notes[j].startTick + notes[j].durationTicks;
+  }
+
+  var title = fileName.replace(/\.(mid|midi)$/i, '').replace(/[_-]/g, ' ');
+  return {
+    title: title + ' (MIDI)',
+    timeSignature: '4/4',
+    keySignature: 'C',
+    notes: songNotes,
+  };
+}
+
+function handleMidiImport(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var arrayBuffer = e.target.result;
+    var uint8 = new Uint8Array(arrayBuffer);
+    try {
+      var midiData = MidiParser.parse(uint8);
+      if (!midiData || !midiData.track) {
+        alert('Could not parse MIDI file.');
+        return;
+      }
+      var song = parseMidiToSong(midiData, file.name);
+      if (!song || song.notes.length === 0) {
+        alert('No notes found in MIDI file.');
+        return;
+      }
+      // Add to songs list and select it
+      SONGS.push(song);
+      var select = document.getElementById('song-select');
+      var opt = document.createElement('option');
+      opt.value = SONGS.length - 1;
+      opt.textContent = song.title;
+      select.appendChild(opt);
+      select.value = SONGS.length - 1;
+      currentSongIndex = SONGS.length - 1;
+      resetPlayback();
+    } catch (err) {
+      alert('Error parsing MIDI: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ─── Init ───────────────────────────────────────────────────────────
+function init() {
+  var select = document.getElementById('song-select');
+  for (var i = 0; i < SONGS.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = SONGS[i].title;
+    select.appendChild(opt);
+  }
+
+  select.addEventListener('change', function() {
+    currentSongIndex = parseInt(select.value);
+    resetPlayback();
+  });
+
+  var slider = document.getElementById('tempo-slider');
+  var bpmDisplay = document.getElementById('bpm-display');
+  slider.addEventListener('input', function() {
+    bpm = parseInt(slider.value);
+    bpmDisplay.textContent = bpm + ' BPM';
+  });
+
+  document.getElementById('btn-play').addEventListener('click', togglePlay);
+  document.getElementById('btn-reset').addEventListener('click', resetPlayback);
+  document.getElementById('btn-next').addEventListener('click', nextNote);
+
+  // MIDI import
+  var importBtn = document.getElementById('btn-import');
+  var fileInput = document.getElementById('midi-file-input');
+  importBtn.addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function() {
+    if (fileInput.files.length > 0) {
+      handleMidiImport(fileInput.files[0]);
+      fileInput.value = '';
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+      e.preventDefault();
+      togglePlay();
+    }
+    if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      nextNote();
+    }
+  });
+
+  highlightAndShow(-1);
+}
+
+init();
+})();
+</script>
+</body>
+</html>

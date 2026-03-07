@@ -617,99 +617,336 @@ const SONGS = [
     ]
   },
   {
-    title: 'Sousa Spectacular (Medley)',
+    title: 'Sousa Spectacular',
     timeSignature: '2/4',
-    keySignature: 'C',
+    keySignature: 'F',
     notes: [
-      // ── Washington Post March ──
-      // Measure 1-2
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
+      // ── Section 1: Washington Post (mm 1-21) ──
+      // m1
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m2
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m3
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // m4
       { keys: ['F/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      // Measure 3-4
-      { keys: ['A/4'], duration: 'q' },
-      { keys: ['A/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // [5] repeat section
+      // m5
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m6
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m7
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // m8
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m9
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m10
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // m11
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m12
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // [13]
+      // m13
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m14
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m15
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m16
+      { keys: ['D/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['D/4'], duration: '8' },
+      // m17
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m18 (has F# accidental)
+      { keys: ['F#/4'], duration: '8', accidentals: ['#'] },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F#/4'], duration: '8', accidentals: ['#'] },
+      // m19
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // m20 (1st ending) + m5-19 repeat + m21 (2nd ending)
+      // Skipping repeat for app - taking 2nd ending:
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
       { keys: ['F/4'], duration: 'q' },
-      // Measure 5-6
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['F/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      // Measure 7-8
-      { keys: ['A/4'], duration: 'h' },
-      { keys: ['G/4'], duration: 'h' },
-      // Measure 9-10
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['A/4'], duration: 'q' },
-      { keys: ['B/4'], duration: 'q' },
-      { keys: ['C/5'], duration: 'q' },
-      // Measure 11-12
-      { keys: ['C/5'], duration: 'q' },
-      { keys: ['B/4'], duration: 'q' },
-      { keys: ['A/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
 
-      // ── The Thunderer ──
-      // Measure 13-14
-      { keys: ['C/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      // Measure 15-16
-      { keys: ['F/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['D/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      // Measure 17-18
-      { keys: ['F/4'], duration: 'q' },
-      { keys: ['F/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['D/4'], duration: 'q' },
-      // Measure 19-20
-      { keys: ['C/4'], duration: 'h' },
-      { keys: ['C/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      // Measure 21-22
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['A/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['F/4'], duration: 'q' },
-      // Measure 23-24
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['D/4'], duration: 'q' },
-      { keys: ['C/4'], duration: 'h' },
-
-      // ── Stars and Stripes Forever ──
-      // Measure 25-26
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['A/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      // Measure 27-28
-      { keys: ['F/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
+      // ── Section 2: The Thunderer (mm 30-53) ──
+      // (8 bars rest mm 22-29 skipped)
+      // [30] mp - dotted quarter + eighth patterns
+      // m30
+      { keys: ['F/4'], duration: 'qd' },
+      { keys: ['E/4'], duration: '8' },
+      // m31
       { keys: ['F/4'], duration: 'h' },
-      // Measure 29-30
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
+      // m32
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['D/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m33
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m34
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m35
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['D/4'], duration: '8' },
+      // m36
+      { keys: ['F/4'], duration: 'h' },
+      // m37 (p, pickup)
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // [38] mf staccato
+      // m38
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m39
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m40
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m41
+      { keys: ['D/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m42
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // m43
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      // m44
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m45
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // [46]
+      // m46
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m47
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m48
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m49
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m50
+      { keys: ['D/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m51
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['D/4'], duration: '8' },
+      // m52
+      { keys: ['C/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // m53
+      { keys: ['F/4'], duration: 'h' },
+
+      // ── Section 3: Stars and Stripes Forever (mm 54-77) ──
+      // [54] f
+      // m54
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m55
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m56
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m57
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m58
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m59
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m60
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m61
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      // [62]
+      // m62
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m63
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m64
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      // m65
+      { keys: ['Bb/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m66
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['E/4'], duration: '8' },
+      // m67
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m68
+      { keys: ['E/4'], duration: '8' },
+      { keys: ['G/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['Bb/4'], duration: '8' },
+      // m69 (mf > f)
       { keys: ['A/4'], duration: 'q' },
-      { keys: ['B/4'], duration: 'q' },
-      // Measure 31-32
+      { keys: ['F/4'], duration: 'q' },
+      // [70] accented finale
+      // m70
       { keys: ['C/5'], duration: 'q' },
-      { keys: ['B/4'], duration: 'q' },
       { keys: ['A/4'], duration: 'q' },
-      { keys: ['G/4'], duration: 'q' },
-      // Measure 33-34
-      { keys: ['C/5'], duration: 'q' },
-      { keys: ['C/5'], duration: 'q' },
-      { keys: ['B/4'], duration: 'q' },
+      // m71
+      { keys: ['F/4'], duration: 'q' },
       { keys: ['A/4'], duration: 'q' },
-      // Measure 35-36: finale
-      { keys: ['G/4'], duration: 'q' },
-      { keys: ['E/4'], duration: 'q' },
-      { keys: ['C/5'], duration: 'h' },
+      // m72
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      // m73
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
+      // m74
+      { keys: ['A/4'], duration: 'q' },
+      { keys: ['F/4'], duration: 'q' },
+      // m75
+      { keys: ['C/5'], duration: 'q' },
+      { keys: ['A/4'], duration: 'q' },
+      // m76
+      { keys: ['F/4'], duration: '8' },
+      { keys: ['A/4'], duration: '8' },
+      { keys: ['C/5'], duration: '8' },
+      { keys: ['F/4'], duration: '8' },
+      // m77 (finale)
+      { keys: ['F/4'], duration: 'q' },
+      { keys: ['C/5'], duration: 'q' },
     ]
   },
 ];
@@ -790,6 +1027,7 @@ function renderSheet(song, highlightIndex) {
     const stave = new VF.Stave(x, y, w);
     if (isFirstInLine) {
       stave.addClef('treble');
+      if (song.keySignature && song.keySignature !== 'C') stave.addKeySignature(song.keySignature);
       if (m === 0) stave.addTimeSignature(song.timeSignature);
     }
     stave.setContext(context).draw();

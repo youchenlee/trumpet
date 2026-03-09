@@ -263,6 +263,81 @@
     border-color: var(--gold);
   }
 
+  .abc-editor {
+    background: var(--bg-card);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+  .abc-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .abc-editor-header label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+  }
+  .abc-editor-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .abc-toggle-arrow {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+  }
+  .abc-toggle-arrow.open { transform: rotate(180deg); }
+  .abc-editor-body {
+    margin-top: 12px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    max-height: 400px;
+    opacity: 1;
+  }
+  .abc-editor-body.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+  }
+  #abc-input {
+    width: 100%;
+    min-height: 140px;
+    background: var(--bg-surface);
+    color: var(--text);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    tab-size: 4;
+  }
+  #abc-input:focus { border-color: var(--gold); }
+  #abc-input::placeholder { color: var(--text-dim); opacity: 0.6; }
+  .abc-help {
+    font-size: 0.73rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+    line-height: 1.7;
+  }
+  .abc-help code {
+    background: var(--bg-surface);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.72rem;
+  }
+
   @media (max-width: 600px) {
     .header h1 { font-size: 1.5rem; }
     .controls-bar { flex-direction: column; align-items: stretch; }
@@ -295,6 +370,38 @@
       <label for="tempo-slider">Tempo</label>
       <input type="range" id="tempo-slider" min="40" max="200" value="100">
       <span class="bpm-display" id="bpm-display">100 BPM</span>
+    </div>
+  </div>
+
+  <div class="abc-editor" id="abc-editor">
+    <div class="abc-editor-header" id="abc-editor-header">
+      <label>ABC Notation Editor</label>
+      <div class="abc-editor-actions">
+        <button class="btn btn-import" id="btn-abc-load" onclick="event.stopPropagation()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          Load
+        </button>
+        <span class="abc-toggle-arrow" id="abc-toggle-arrow">▾</span>
+      </div>
+    </div>
+    <div class="abc-editor-body collapsed" id="abc-editor-body">
+      <textarea id="abc-input" spellcheck="false" placeholder="X:1&#10;T:My Song&#10;M:4/4&#10;K:C&#10;L:1/4&#10;C D E F | G A B c |"></textarea>
+      <div class="abc-help">
+        <code>C D E F G A B</code> = octave 4 &nbsp;
+        <code>c d e f g a b</code> = octave 5 &nbsp;
+        <code>C,</code> = octave 3 &nbsp;
+        <code>c'</code> = octave 6<br>
+        <code>^F</code> = F# &nbsp;
+        <code>_B</code> = Bb &nbsp;
+        <code>=B</code> = B♮ &nbsp;
+        <code>C2</code> = half note &nbsp;
+        <code>C/2</code> = eighth &nbsp;
+        <code>z</code> = rest &nbsp;
+        <code>|</code> = bar line<br>
+        <code>C-C</code> = tie (same pitch, sustain) &nbsp;
+        <code>(C D E)</code> = slur (legato) &nbsp;
+        Changes auto-preview as you type.
+      </div>
     </div>
   </div>
 
@@ -398,6 +505,326 @@ function fingeringDescription(f) {
   if (f[1]) pressed.push('2');
   if (f[2]) pressed.push('3');
   return pressed.length === 0 ? 'Open' : pressed.join(' - ');
+}
+
+// ─── ABC Notation Parser ────────────────────────────────────────────
+var KEY_SIG_ACCIDENTALS = {
+  'C': {}, 'Am': {},
+  'G': { F: '#' }, 'Em': { F: '#' },
+  'D': { F: '#', C: '#' }, 'Bm': { F: '#', C: '#' },
+  'A': { F: '#', C: '#', G: '#' }, 'F#m': { F: '#', C: '#', G: '#' },
+  'E': { F: '#', C: '#', G: '#', D: '#' },
+  'B': { F: '#', C: '#', G: '#', D: '#', A: '#' },
+  'F#': { F: '#', C: '#', G: '#', D: '#', A: '#', E: '#' },
+  'F': { B: 'b' }, 'Dm': { B: 'b' },
+  'Bb': { B: 'b', E: 'b' }, 'Gm': { B: 'b', E: 'b' },
+  'Eb': { B: 'b', E: 'b', A: 'b' }, 'Cm': { B: 'b', E: 'b', A: 'b' },
+  'Ab': { B: 'b', E: 'b', A: 'b', D: 'b' }, 'Fm': { B: 'b', E: 'b', A: 'b', D: 'b' },
+  'Db': { B: 'b', E: 'b', A: 'b', D: 'b', G: 'b' },
+};
+
+function beatsToVfDuration(beats) {
+  if (beats >= 3.5) return 'w';
+  if (beats >= 2.5) return 'hd';
+  if (beats >= 1.75) return 'h';
+  if (beats >= 1.25) return 'qd';
+  if (beats >= 0.875) return 'q';
+  if (beats >= 0.625) return '8d';
+  if (beats >= 0.375) return '8';
+  return '16';
+}
+
+function parseABC(abcText) {
+  var title = 'ABC Song';
+  var meter = '4/4';
+  var key = 'C';
+  var defaultLength = null; // will auto-detect from meter if not set
+
+  var lines = abcText.split('\n');
+  var bodyLines = [];
+  var pastHeaders = false;
+
+  for (var li = 0; li < lines.length; li++) {
+    var trimmed = lines[li].trim();
+    if (!pastHeaders && /^[A-Za-z]:/.test(trimmed) && trimmed[1] === ':') {
+      var field = trimmed[0].toUpperCase();
+      var value = trimmed.substring(2).trim();
+      switch (field) {
+        case 'T': title = value; break;
+        case 'M': meter = value; break;
+        case 'K': {
+          // Parse key like "F", "Bb", "F#m", "Eb major", "G minor"
+          var km = value.match(/^([A-G][b#]?)\s*(m|min|maj|major|minor)?/i);
+          if (km) {
+            key = km[1];
+            if (km[2] && km[2].toLowerCase().startsWith('m') && km[2].toLowerCase() !== 'maj' && km[2].toLowerCase() !== 'major') {
+              key += 'm';
+            }
+          }
+          pastHeaders = true;
+          break;
+        }
+        case 'L':
+          var lp = value.split('/');
+          defaultLength = parseInt(lp[0]) / parseInt(lp[1]);
+          break;
+      }
+    } else if (trimmed && !trimmed.startsWith('%')) {
+      bodyLines.push(trimmed);
+    }
+  }
+
+  // Auto-detect default length from meter if not specified
+  if (defaultLength === null) {
+    var mParts = meter.split('/');
+    var meterVal = parseInt(mParts[0]) / parseInt(mParts[1]);
+    defaultLength = meterVal >= 0.75 ? 1/8 : 1/16;
+  }
+
+  var defaultBeats = defaultLength * 4; // convert to beats (quarter = 1)
+  var keySigAcc = KEY_SIG_ACCIDENTALS[key] || {};
+  var body = bodyLines.join(' ');
+  var notes = [];
+  var measureAcc = {}; // per-measure accidental overrides
+
+  var i = 0;
+  var slurDepth = 0; // track nested slurs
+  var slurStartIdx = -1; // index of note where current slur started
+
+  while (i < body.length) {
+    var ch = body[i];
+
+    // Slur markers
+    if (ch === '(') {
+      slurDepth++;
+      if (slurDepth === 1) slurStartIdx = notes.length; // will mark next note
+      i++;
+      continue;
+    }
+    if (ch === ')') {
+      if (slurDepth > 0) {
+        slurDepth--;
+        if (slurDepth === 0 && notes.length > 0) {
+          notes[notes.length - 1]._slurEnd = true;
+        }
+      }
+      i++;
+      continue;
+    }
+
+    // Bar lines reset measure accidentals
+    if (ch === '|' || ch === ':' || ch === '[' || ch === ']') {
+      if (ch === '|') measureAcc = {};
+      i++;
+      continue;
+    }
+    if (ch === ' ' || ch === '\t' || ch === '\n') { i++; continue; }
+
+    // Check for accidental prefix
+    var acc = null;
+    if (ch === '^') {
+      acc = '#'; i++;
+      if (i < body.length && body[i] === '^') { acc = '##'; i++; }
+    } else if (ch === '_') {
+      acc = 'b'; i++;
+      if (i < body.length && body[i] === '_') { acc = 'bb'; i++; }
+    } else if (ch === '=') {
+      acc = 'n'; i++;
+    }
+
+    if (i >= body.length) break;
+    var nch = body[i];
+
+    // Note or rest
+    if (/[A-Ga-gz]/.test(nch)) {
+      var isRestNote = (nch === 'z');
+      var baseName = nch.toUpperCase();
+      var octave = (nch === nch.toLowerCase() && nch !== 'z') ? 5 : 4;
+      i++;
+
+      // Octave modifiers
+      while (i < body.length) {
+        if (body[i] === "'") { octave++; i++; }
+        else if (body[i] === ',') { octave--; i++; }
+        else break;
+      }
+
+      // Duration: number, /number, number/number
+      var numStr = '';
+      while (i < body.length && /[0-9]/.test(body[i])) { numStr += body[i]; i++; }
+      var multiplier = numStr ? parseInt(numStr) : 1;
+
+      if (i < body.length && body[i] === '/') {
+        i++;
+        var denomStr = '';
+        while (i < body.length && /[0-9]/.test(body[i])) { denomStr += body[i]; i++; }
+        var denom = denomStr ? parseInt(denomStr) : 2;
+        multiplier = (numStr ? parseInt(numStr) : 1) / denom;
+      }
+
+      var beats = defaultBeats * multiplier;
+      var vfDur = beatsToVfDuration(beats);
+
+      if (isRestNote) {
+        notes.push({ keys: ['B/4'], duration: vfDur + 'r' });
+      } else {
+        // Determine effective accidental
+        var effectiveAcc = null;
+        if (acc === '#') { effectiveAcc = '#'; measureAcc[baseName] = '#'; }
+        else if (acc === 'b') { effectiveAcc = 'b'; measureAcc[baseName] = 'b'; }
+        else if (acc === 'n') { effectiveAcc = null; measureAcc[baseName] = 'n'; }
+        else if (measureAcc[baseName] !== undefined) {
+          effectiveAcc = measureAcc[baseName] === 'n' ? null : measureAcc[baseName];
+        } else {
+          effectiveAcc = keySigAcc[baseName] || null;
+        }
+
+        // Build key string
+        var keyStr;
+        if (effectiveAcc === '#') keyStr = baseName + '#/' + octave;
+        else if (effectiveAcc === 'b') keyStr = baseName + 'b/' + octave;
+        else keyStr = baseName + '/' + octave;
+
+        // Determine if VexFlow needs explicit accidental display
+        var keySigForNote = keySigAcc[baseName] || null;
+        var noteObj = { keys: [keyStr], duration: vfDur };
+
+        if (acc === 'n' && keySigForNote) {
+          noteObj.accidentals = ['n'];
+        } else if (acc === '#' || acc === 'b') {
+          if (effectiveAcc !== keySigForNote) {
+            noteObj.accidentals = [effectiveAcc];
+          }
+        }
+
+        // Check for tie marker
+        var tied = false;
+        while (i < body.length && body[i] === ' ') i++; // skip spaces before tie
+        if (i < body.length && body[i] === '-') {
+          tied = true;
+          i++;
+        }
+        noteObj._tied = tied;
+        noteObj._beats = beats;
+
+        // Mark slur start if this is the first note after '('
+        if (slurStartIdx === notes.length) {
+          noteObj._slurStart = true;
+        }
+
+        notes.push(noteObj);
+      }
+    } else {
+      i++; // skip unknown chars
+    }
+  }
+
+  // Post-process: mark tie pairs for rendering
+  // _tieToNext = true means this note is tied to the next note
+  // _tieFromPrev = true means this note continues from previous (suppress attack)
+  for (var ti = 0; ti < notes.length - 1; ti++) {
+    if (notes[ti]._tied && !isRest(notes[ti].duration) && !isRest(notes[ti + 1].duration)) {
+      if (notes[ti].keys[0] === notes[ti + 1].keys[0]) {
+        notes[ti]._tieToNext = true;
+        notes[ti + 1]._tieFromPrev = true;
+      }
+    }
+  }
+
+  return { title: title, timeSignature: meter, keySignature: key, notes: notes };
+}
+
+// ─── Internal → ABC Converter ───────────────────────────────────────
+function beatsToABCMult(beats, defBeats) {
+  var ratio = beats / defBeats;
+  if (Math.abs(ratio - 1) < 0.01) return '';
+  if (Math.abs(ratio - 2) < 0.01) return '2';
+  if (Math.abs(ratio - 4) < 0.01) return '4';
+  if (Math.abs(ratio - 0.5) < 0.01) return '/2';
+  if (Math.abs(ratio - 0.25) < 0.01) return '/4';
+  if (Math.abs(ratio - 1.5) < 0.01) return '3/2';
+  if (Math.abs(ratio - 3) < 0.01) return '3';
+  if (Math.abs(ratio - 0.75) < 0.01) return '3/4';
+  if (Math.abs(ratio - 8) < 0.01) return '8';
+  return String(Math.round(ratio));
+}
+
+function songToABC(song) {
+  var keySigAcc = KEY_SIG_ACCIDENTALS[song.keySignature] || {};
+  var timeParts = song.timeSignature.split('/');
+  var beatsPerMeasure = parseInt(timeParts[0]);
+  // Choose default note length based on most common duration
+  var defBeats = 1; // L:1/4
+
+  var abc = 'X:1\n';
+  abc += 'T:' + song.title + '\n';
+  abc += 'M:' + song.timeSignature + '\n';
+  abc += 'K:' + song.keySignature + '\n';
+  abc += 'L:1/4\n';
+
+  var beatsInMeasure = 0;
+  var notesOnLine = 0;
+
+  for (var ni = 0; ni < song.notes.length; ni++) {
+    var n = song.notes[ni];
+    var beats = durationBeats(n.duration);
+    var rest = isRest(n.duration);
+
+    // Bar line
+    if (beatsInMeasure > 0 && Math.abs(beatsInMeasure - beatsPerMeasure) < 0.01) {
+      abc += '| ';
+      beatsInMeasure = 0;
+      notesOnLine++;
+      if (notesOnLine >= 16) { abc += '\n'; notesOnLine = 0; }
+    }
+
+    if (rest) {
+      abc += 'z' + beatsToABCMult(beats, defBeats) + ' ';
+    } else {
+      var key = n.keys[0];
+      var parts = key.split('/');
+      var noteName = parts[0]; // e.g. "Bb", "F#", "C"
+      var octave = parseInt(parts[1]);
+
+      var baseLetter, noteAcc;
+      if (noteName.length > 1) {
+        baseLetter = noteName[0];
+        noteAcc = noteName.substring(1); // '#' or 'b'
+      } else {
+        baseLetter = noteName;
+        noteAcc = null;
+      }
+
+      // Determine ABC accidental prefix
+      var keySigForNote = keySigAcc[baseLetter] || null;
+      var prefix = '';
+      if (noteAcc === '#' && keySigForNote !== '#') prefix = '^';
+      else if (noteAcc === 'b' && keySigForNote !== 'b') prefix = '_';
+      else if (!noteAcc && keySigForNote) prefix = '=';
+
+      // Build note letter with octave
+      var letter;
+      if (octave <= 4) {
+        letter = baseLetter.toUpperCase();
+        for (var o = octave; o < 4; o++) letter += ',';
+      } else {
+        letter = baseLetter.toLowerCase();
+        for (var o = 5; o < octave; o++) letter += "'";
+      }
+
+      if (n._slurStart) abc += '(';
+      abc += prefix + letter + beatsToABCMult(beats, defBeats);
+      if (n._tieToNext) abc += '-';
+      if (n._slurEnd) abc += ')';
+      abc += ' ';
+    }
+
+    beatsInMeasure += beats;
+    notesOnLine++;
+  }
+
+  abc += '|';
+  return abc;
 }
 
 // ─── Song Data ──────────────────────────────────────────────────────
@@ -1016,6 +1443,9 @@ function renderSheet(song, highlightIndex) {
   let globalNoteIdx = 0;
   let highlightedBBox = null;
 
+  // Track all VF notes globally for cross-measure ties
+  var allVfNotes = []; // { vfNote, globalIdx, songNote }
+
   for (let m = 0; m < notesPerMeasure.length; m++) {
     const lineIdx = Math.floor(m / measuresPerLine);
     const colIdx = m % measuresPerLine;
@@ -1060,12 +1490,50 @@ function renderSheet(song, highlightIndex) {
       }
 
       vfNotes.push(sn);
+      allVfNotes.push({ vfNote: sn, globalIdx: globalNoteIdx, songNote: nd });
       globalNoteIdx++;
     }
 
     var beams = VF.Beam.generateBeams(vfNotes);
     VF.Formatter.FormatAndDraw(context, stave, vfNotes);
     beams.forEach(function(b) { b.setContext(context).draw(); });
+  }
+
+  // Draw ties
+  for (var ti = 0; ti < allVfNotes.length - 1; ti++) {
+    var entry = allVfNotes[ti];
+    if (entry.songNote._tieToNext) {
+      var nextEntry = allVfNotes[ti + 1];
+      try {
+        var tie = new VF.StaveTie({
+          first_note: entry.vfNote,
+          last_note: nextEntry.vfNote,
+          first_indices: [0],
+          last_indices: [0],
+        });
+        tie.setContext(context).draw();
+      } catch (e) { /* cross-line ties may fail, ignore */ }
+    }
+  }
+
+  // Draw slurs
+  for (var si = 0; si < allVfNotes.length; si++) {
+    if (allVfNotes[si].songNote._slurStart) {
+      // Find matching slur end
+      for (var sj = si + 1; sj < allVfNotes.length; sj++) {
+        if (allVfNotes[sj].songNote._slurEnd) {
+          try {
+            var curve = new VF.Curve(
+              allVfNotes[si].vfNote,
+              allVfNotes[sj].vfNote,
+              { cps: [{ x: 0, y: 20 }, { x: 0, y: 20 }] }
+            );
+            curve.setContext(context).draw();
+          } catch (e) { /* cross-line slurs may fail */ }
+          break;
+        }
+      }
+    }
   }
 }
 
@@ -1214,9 +1682,18 @@ function scheduleNextNote() {
 
   highlightAndShow(currentNoteIndex);
 
-  if (!isRest(note.duration)) {
+  if (!isRest(note.duration) && !note._tieFromPrev) {
+    // Calculate total duration including any tied-forward notes
+    var totalSec = durationSec;
+    var lookAhead = currentNoteIndex;
+    while (lookAhead < song.notes.length && song.notes[lookAhead]._tieToNext) {
+      lookAhead++;
+      if (lookAhead < song.notes.length) {
+        totalSec += durationBeats(song.notes[lookAhead].duration) * (60 / bpm);
+      }
+    }
     var freq = pitchToFrequency(note.keys[0]);
-    playTone(freq, durationSec * 0.9);
+    playTone(freq, totalSec * 0.9);
   }
 
   currentNoteIndex++;
@@ -1397,7 +1874,10 @@ function init() {
 
   select.addEventListener('change', function() {
     currentSongIndex = parseInt(select.value);
+    abcIsUserEditing = false;
+    abcCustomSongIndex = -1;
     resetPlayback();
+    updateABCDisplay();
   });
 
   var slider = document.getElementById('tempo-slider');
@@ -1411,6 +1891,106 @@ function init() {
   document.getElementById('btn-reset').addEventListener('click', resetPlayback);
   document.getElementById('btn-next').addEventListener('click', nextNote);
 
+  // ABC editor
+  var abcInput = document.getElementById('abc-input');
+  var abcBody = document.getElementById('abc-editor-body');
+  var abcToggleArrow = document.getElementById('abc-toggle-arrow');
+  var abcHeader = document.getElementById('abc-editor-header');
+
+  abcHeader.addEventListener('click', function() {
+    abcBody.classList.toggle('collapsed');
+    abcToggleArrow.classList.toggle('open');
+  });
+
+  // Live preview with debounce
+  var abcPreviewTimer = null;
+  var abcIsUserEditing = false;
+  var abcCustomSongIndex = -1; // index of the live-preview song in SONGS
+
+  function abcLivePreview() {
+    var text = abcInput.value.trim();
+    if (!text) return;
+    try {
+      var parsed = parseABC(text);
+      if (!parsed.notes.length) return;
+
+      if (abcCustomSongIndex >= 0) {
+        // Update existing preview song in-place
+        SONGS[abcCustomSongIndex] = parsed;
+        // Update dropdown label if title changed
+        var opts = select.options;
+        for (var oi = 0; oi < opts.length; oi++) {
+          if (parseInt(opts[oi].value) === abcCustomSongIndex) {
+            opts[oi].textContent = parsed.title;
+            break;
+          }
+        }
+      } else {
+        // Add as new song
+        SONGS.push(parsed);
+        abcCustomSongIndex = SONGS.length - 1;
+        var opt = document.createElement('option');
+        opt.value = abcCustomSongIndex;
+        opt.textContent = parsed.title;
+        select.appendChild(opt);
+      }
+
+      select.value = abcCustomSongIndex;
+      currentSongIndex = abcCustomSongIndex;
+      // Preserve playback position if possible, otherwise reset
+      var song = getCurrentSong();
+      if (currentNoteIndex >= song.notes.length) currentNoteIndex = -1;
+      highlightAndShow(currentNoteIndex);
+    } catch (e) {
+      // Silently ignore parse errors during typing
+    }
+  }
+
+  abcInput.addEventListener('input', function() {
+    abcIsUserEditing = true;
+    if (abcPreviewTimer) clearTimeout(abcPreviewTimer);
+    abcPreviewTimer = setTimeout(abcLivePreview, 400);
+  });
+
+  // Load button: finalize the current ABC as a permanent song
+  document.getElementById('btn-abc-load').addEventListener('click', function() {
+    var text = abcInput.value.trim();
+    if (!text) return;
+    try {
+      var parsed = parseABC(text);
+      if (!parsed.notes.length) { alert('No notes found in ABC input.'); return; }
+
+      if (abcCustomSongIndex >= 0) {
+        // Already previewing — just finalize it
+        SONGS[abcCustomSongIndex] = parsed;
+        currentSongIndex = abcCustomSongIndex;
+      } else {
+        SONGS.push(parsed);
+        abcCustomSongIndex = SONGS.length - 1;
+        var opt = document.createElement('option');
+        opt.value = abcCustomSongIndex;
+        opt.textContent = parsed.title;
+        select.appendChild(opt);
+      }
+
+      select.value = abcCustomSongIndex;
+      currentSongIndex = abcCustomSongIndex;
+      abcCustomSongIndex = -1; // detach so next edit creates a new song
+      abcIsUserEditing = false;
+      resetPlayback();
+    } catch (err) {
+      alert('ABC parse error: ' + err.message);
+    }
+  });
+
+  // Show ABC for currently selected song
+  function updateABCDisplay() {
+    if (abcIsUserEditing) return; // don't overwrite user's edits
+    var song = getCurrentSong();
+    abcInput.value = songToABC(song);
+  }
+  updateABCDisplay();
+
   // MIDI import
   var importBtn = document.getElementById('btn-import');
   var fileInput = document.getElementById('midi-file-input');
@@ -1423,11 +2003,11 @@ function init() {
   });
 
   document.addEventListener('keydown', function(e) {
-    if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+    if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
       togglePlay();
     }
-    if (e.code === 'ArrowRight') {
+    if (e.code === 'ArrowRight' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
       e.preventDefault();
       nextNote();
     }

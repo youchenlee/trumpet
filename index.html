@@ -134,12 +134,36 @@
     border: 1px solid rgba(201,168,76,0.12);
     border-radius: 12px;
     padding: 20px 12px;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
     overflow-x: auto;
     overflow-y: hidden;
   }
-  #sheet-music { min-height: 160px; }
+  #sheet-music { min-height: 160px; padding-bottom: 10px; }
   #sheet-music svg { display: block; }
+
+  .bottom-panel {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: var(--bg-deep);
+    padding-top: 8px;
+    padding-bottom: 12px;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+  }
+  .bottom-panel::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to top, var(--bg-deep), transparent);
+    pointer-events: none;
+  }
 
   .valve-section {
     display: flex;
@@ -150,8 +174,8 @@
     background: var(--bg-card);
     border: 1px solid rgba(201,168,76,0.12);
     border-radius: 12px;
-    padding: 24px 20px;
-    margin-bottom: 20px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
   }
 
   .valve-casing {
@@ -409,9 +433,10 @@
     <div id="sheet-music"></div>
   </div>
 
+  <div class="bottom-panel">
   <div class="valve-section">
     <div class="valve-container">
-      <svg id="valve-svg" viewBox="0 0 240 150" width="240" height="150">
+      <svg id="valve-svg" viewBox="0 0 240 150" width="200" height="125">
         <rect class="valve-casing" x="10" y="45" width="56" height="95" rx="10"/>
         <rect class="valve-casing" x="92" y="45" width="56" height="95" rx="10"/>
         <rect class="valve-casing" x="174" y="45" width="56" height="95" rx="10"/>
@@ -452,6 +477,7 @@
       <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" fill="currentColor"/></svg>
       Next
     </button>
+  </div>
   </div>
 </div>
 

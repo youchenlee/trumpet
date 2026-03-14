@@ -136,7 +136,8 @@
     padding: 20px 12px;
     margin-bottom: 8px;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
+    max-height: 60vh;
   }
   #sheet-music { min-height: 160px; padding-bottom: 10px; }
   #sheet-music svg { display: block; }
@@ -467,6 +468,10 @@
     <button class="btn" id="btn-reset" title="Reset">
       <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="currentColor"/></svg>
       Stop
+    </button>
+    <button class="btn" id="btn-prev" title="Previous note">
+      <svg viewBox="0 0 24 24"><path d="M6 6v12h2V6H6zm12 0L9.5 12 18 18V6z" fill="currentColor"/></svg>
+      Prev
     </button>
     <button class="btn btn-primary" id="btn-play" title="Play / Pause">
       <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -1467,9 +1472,8 @@ function renderSheet(song, highlightIndex) {
   context.setStrokeStyle('#E0D5C0');
 
   let globalNoteIdx = 0;
-  let highlightedBBox = null;
 
-  // Track all VF notes globally for cross-measure ties
+  // Track all VF notes globally for cross-measure ties and fast highlight updates
   var allVfNotes = []; // { vfNote, globalIdx, songNote }
 
   for (let m = 0; m < notesPerMeasure.length; m++) {
@@ -1561,6 +1565,9 @@ function renderSheet(song, highlightIndex) {
       }
     }
   }
+
+  // Cache for fast highlight updates (avoid full re-render during playback)
+  renderedVfNotes = allVfNotes;
 }
 
 // ─── Web Audio Synthesis ────────────────────────────────────────────
@@ -1630,6 +1637,7 @@ var currentNoteIndex = -1;
 var isPlaying = false;
 var bpm = 100;
 var playTimeoutId = null;
+var renderedVfNotes = []; // cached VF note elements from last full render
 
 function getCurrentSong() { return SONGS[currentSongIndex]; }
 
@@ -1654,10 +1662,54 @@ function updateValveDisplay(noteKey) {
   }
 }
 
+function getNoteElement(vfNote) {
+  // VexFlow 4.x: try getSVGElement(), then attrs.el, then getAttribute('el')
+  if (typeof vfNote.getSVGElement === 'function') return vfNote.getSVGElement();
+  if (vfNote.attrs && vfNote.attrs.el) return vfNote.attrs.el;
+  if (typeof vfNote.getAttribute === 'function') return vfNote.getAttribute('el');
+  return null;
+}
+
+function updateHighlight(index) {
+  // Fast path: update SVG fill/stroke directly without full re-render
+  var normalColor = '#E0D5C0';
+  var highlightColor = '#FFD700';
+  for (var i = 0; i < renderedVfNotes.length; i++) {
+    var entry = renderedVfNotes[i];
+    var color = (entry.globalIdx === index) ? highlightColor : normalColor;
+    var el = getNoteElement(entry.vfNote);
+    if (el) {
+      var shapes = el.querySelectorAll('path, rect, circle, line, polygon, ellipse');
+      for (var s = 0; s < shapes.length; s++) {
+        shapes[s].setAttribute('fill', color);
+        shapes[s].setAttribute('stroke', color);
+      }
+    }
+  }
+  // Auto-scroll to highlighted note
+  if (index >= 0 && index < renderedVfNotes.length) {
+    var el = getNoteElement(renderedVfNotes[index].vfNote);
+    if (el) {
+      var wrapper = document.querySelector('.sheet-music-wrapper');
+      var noteRect = el.getBoundingClientRect();
+      var wrapperRect = wrapper.getBoundingClientRect();
+      if (noteRect.top < wrapperRect.top || noteRect.bottom > wrapperRect.bottom) {
+        var scrollTarget = wrapper.scrollTop + (noteRect.top - wrapperRect.top) - wrapperRect.height / 3;
+        wrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+      }
+    }
+  }
+}
+
 function highlightAndShow(index) {
   var song = getCurrentSong();
   currentNoteIndex = index;
-  renderSheet(song, index);
+  // If we have cached notes, do a fast highlight update; otherwise full render
+  if (renderedVfNotes.length > 0) {
+    updateHighlight(index);
+  } else {
+    renderSheet(song, index);
+  }
   if (index >= 0 && index < song.notes.length) {
     var note = song.notes[index];
     if (!isRest(note.duration)) {
@@ -1689,6 +1741,7 @@ function resetPlayback() {
   isPlaying = false;
   if (playTimeoutId) { clearTimeout(playTimeoutId); playTimeoutId = null; }
   currentNoteIndex = -1;
+  renderedVfNotes = []; // invalidate cache → force full re-render
   updatePlayButton();
   highlightAndShow(-1);
 }
@@ -1739,6 +1792,17 @@ function togglePlay() {
       currentNoteIndex = 0;
     }
     scheduleNextNote();
+  }
+}
+
+function prevNote() {
+  var idx = currentNoteIndex <= 0 ? 0 : currentNoteIndex - 1;
+  currentNoteIndex = idx;
+  highlightAndShow(currentNoteIndex);
+  ensureAudioCtx();
+  var note = getCurrentSong().notes[currentNoteIndex];
+  if (!isRest(note.duration)) {
+    playTone(pitchToFrequency(note.keys[0]), 0.4);
   }
 }
 
@@ -1915,6 +1979,7 @@ function init() {
 
   document.getElementById('btn-play').addEventListener('click', togglePlay);
   document.getElementById('btn-reset').addEventListener('click', resetPlayback);
+  document.getElementById('btn-prev').addEventListener('click', prevNote);
   document.getElementById('btn-next').addEventListener('click', nextNote);
 
   // ABC editor
@@ -1963,6 +2028,7 @@ function init() {
 
       select.value = abcCustomSongIndex;
       currentSongIndex = abcCustomSongIndex;
+      renderedVfNotes = []; // invalidate cache — song content changed
       // Preserve playback position if possible, otherwise reset
       var song = getCurrentSong();
       if (currentNoteIndex >= song.notes.length) currentNoteIndex = -1;
@@ -2032,6 +2098,10 @@ function init() {
     if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
       togglePlay();
+    }
+    if (e.code === 'ArrowLeft' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+      e.preventDefault();
+      prevNote();
     }
     if (e.code === 'ArrowRight' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
       e.preventDefault();
